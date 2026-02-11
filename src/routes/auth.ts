@@ -2,16 +2,28 @@ import { Router } from "express";
 import axios from "axios";
 import jwt from 'jsonwebtoken';
 import { User } from "@/models/User.js";
+import crypto from "crypto";
+
 
 
 const router = Router();
 
 router.get("/discord", (_, res) => {
+    const state = crypto.randomBytes(16).toString("hex");
+
+    res.cookie("oauth_state", state, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 5 * 60 * 1000,
+    });
+
     const params = new URLSearchParams({
         client_id: process.env.DISCORD_CLIENT_ID as string,
         redirect_uri: process.env.DISCORD_REDIRECT_URI!,
         response_type: "code",
         scope: "identify email",
+        state,
     });
 
     res.redirect(`https://discord.com/oauth2/authorize?${params.toString()}`);
@@ -19,7 +31,18 @@ router.get("/discord", (_, res) => {
 
 router.get('/discord/callback', async (req, res) => {
     const code = req.query.code as string;
+    const state = req.query.state as string;
+
+    const storedState = req.cookies?.oauth_state;
+
     if (!code) return res.status(400).send('No code provided!');
+
+    if (!state || state !== storedState) {
+        res.clearCookie("oauth_state");
+        return res.status(400).send("Invalid OAuth state");
+    }
+
+    res.clearCookie("oauth_state");
 
     try {
         const params = new URLSearchParams({
@@ -42,7 +65,7 @@ router.get('/discord/callback', async (req, res) => {
 
         let user = await User.findOneAndUpdate(
             { discordId: id },
-            { username, avatar, accessToken: tokenRes.data.access_token, refreshToken: tokenRes.data.refresh_token },
+            { username, avatar },
             { upsert: true, new: true }
         );
 

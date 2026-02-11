@@ -5,7 +5,7 @@ import { authenticate, type AuthRequest } from "@/middleware/auth.js";
 
 const router = Router();
 
-router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
+router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
     try {
         if (!req.user) {
             return res.status(401).json({ message: "Unauthorized" });

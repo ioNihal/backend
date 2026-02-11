@@ -1,16 +1,28 @@
 import mongoose from "mongoose";
 import express from 'express';
+import http from 'http';
 import dotenv from 'dotenv';
-import authRoutes from '@/routes/auth.js';
-import userRoutes from '@/routes/user.js';
 import cors from 'cors';
 import cookieParser from "cookie-parser";
+import authRoutes from '@/routes/auth.js';
+import userRoutes from '@/routes/user.js';
+import characterRoutes from '@/routes/character.js';
+import { Server } from "socket.io";
+import { initSockets } from "@/sockets/index.js";
 
 
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app);
 const PORT = process.env.PORT || 3000;
+
+const io = new Server(server, {
+    cors: {
+        origin: process.env.CLIENT_URL,
+        credentials: true
+    }
+});
 
 //  Trust proxy 
 app.set("trust proxy", 1);
@@ -32,9 +44,13 @@ mongoose.connect(process.env.MONGO_URI!)
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/', userRoutes)
+app.use('/api/me', userRoutes)
+app.use('/api/characters', characterRoutes)
 
+export { io };
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
+
+initSockets(io);

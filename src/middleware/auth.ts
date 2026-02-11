@@ -14,7 +14,7 @@ interface JwtPayload {
 }
 
 export const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
-    const token = req.cookies.session;
+    const token = req.cookies?.session;
 
     if (!token) return res.status(401).json({ error: "Unauthorized" });
 
@@ -29,6 +29,11 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
         if (err instanceof jwt.TokenExpiredError) {
             return res.status(401).json({ error: "Session expired" });
         }
-        return res.status(401).json({ error: "Invalid token" });
+
+        if (err instanceof jwt.JsonWebTokenError) {
+            return res.status(401).json({ error: "Invalid token" });
+        }
+
+        return res.status(500).json({ error: "Authentication failure" });
     }
 }
