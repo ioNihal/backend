@@ -3,8 +3,11 @@ import cookie from "cookie"
 import jwt, { type JwtPayload } from "jsonwebtoken";
 import { registerHandlers } from "./handlers.js";
 import { players } from "./state.js";
+import { startGlobalVitalTick } from "./vitals.js";
 
 export function initSockets(io: Server) {
+    // Start global vitals tick
+    startGlobalVitalTick(io);
 
     // middleware for auth
     io.use((socket, next) => {
@@ -42,8 +45,19 @@ export function initSockets(io: Server) {
         registerHandlers(io, socket);
 
         socket.on("disconnect", () => {
+            const player = players.get(socket.id);
             players.delete(socket.id);
             console.log("User disconnected:", socket.id);
-        })
+
+            if (player) {
+                io.to(player.location).emit("chat", { name: "SYSTEM", message: `${player.name} has disconnected.` });
+                
+                // Broadcast updated room players
+                const roomPlayers = Array.from(players.values())
+                    .filter(p => p.location === player.location)
+                    .map(p => ({ characterId: p.characterId, name: p.name }));
+                io.to(player.location).emit("roomPlayers", roomPlayers);
+            }
+        });
     });
 }

@@ -58,13 +58,27 @@ router.post("/", authenticate, async (req: AuthRequest, res) => {
         const avatars = ["/avatar1.webp", "/avatar2.webp"];
         const avatar = avatars[Math.floor(Math.random() * avatars.length)] ?? null;
 
+        // Generate a unique 4-digit phone number (SAMP-style)
+        let phoneNumber: string;
+        let phoneExists = true;
+        do {
+            phoneNumber = String(Math.floor(1000 + Math.random() * 9000));
+            phoneExists = !!(await Character.findOne({ phoneNumber }).session(session));
+        } while (phoneExists);
+
         const [newCharacter] = await Character.create([{
             userId,
             characterId: nanoid(12),
             name,
             age,
             backstory,
-            avatar
+            avatar,
+            phoneNumber,
+            // Starter inventory — every new citizen gets a phone and a water bottle
+            inventory: [
+                { itemId: "phone", quantity: 1 },
+                { itemId: "water_bottle", quantity: 2 },
+            ],
         }], { session });
 
         await session.commitTransaction();
@@ -89,12 +103,29 @@ router.get("/", authenticate, async (req: AuthRequest, res) => {
 
     try {
         const characters = await Character.find({ userId })
-            .select("characterId name age level avatar faction jobStatus location lastPlayed")
+            .select("characterId name age level avatar faction factionRank jobStatus location lastPlayed phoneNumber wantedLevel health hunger thirst energy")
             .lean();
 
         res.json(characters);
     } catch (err) {
         console.error("Failed to fetch characters:", err);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+});
+
+router.get("/:characterId", authenticate, async (req: AuthRequest, res) => {
+    try {
+        const { characterId } = req.params;
+        if (!characterId) {
+            return res.status(400).json({ message: "Character ID is required" });
+        }
+        const character = await Character.findOne({ characterId });
+        if (!character) {
+            return res.status(404).json({ message: "Character not found" });
+        }
+        res.json(character);
+    } catch (err) {
+        console.error("Failed to fetch character details:", err);
         return res.status(500).json({ message: "Internal Server Error" });
     }
 });

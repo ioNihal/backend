@@ -42,10 +42,27 @@ mongoose.connect(process.env.MONGO_URI!)
     .then(() => console.log("Connected to MongoDB"))
     .catch((err) => console.error("MongoDB Connection Error:", err));
 
+import { mapNodes } from '@/data/map.js';
+import redis from '@/lib/redis.js';
+import { ONLINE_PLAYERS } from '@/lib/redisKeys.js';
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/me', userRoutes)
 app.use('/api/characters', characterRoutes)
+
+app.get('/api/map', (_, res) => {
+    res.json(Object.values(mapNodes));
+});
+
+app.get('/api/online', async (_, res) => {
+    try {
+        const count = await redis.sCard(ONLINE_PLAYERS);
+        res.json({ count });
+    } catch {
+        res.json({ count: 0 });
+    }
+});
 
 export { io };
 
