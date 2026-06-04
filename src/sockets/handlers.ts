@@ -13,6 +13,7 @@ import "./commands/navigation.js";
 import "./commands/phone.js";
 import "./commands/radio.js";
 import "./commands/inventory.js";
+import "./commands/combat.js";
 
 
 export function registerHandlers(io: Server, socket: Socket) {
@@ -46,22 +47,41 @@ export function registerHandlers(io: Server, socket: Socket) {
                 return socket.emit("error", "Character not found");
             }
 
+            let location = character.location;
+            let isDead = character.isDead ?? false;
+            let health = character.health ?? 100;
+            let discharged = false;
+
+            if (isDead) {
+                const respawnActive = await redis.get(`respawn:${character.characterId}`);
+                if (!respawnActive) {
+                    isDead = false;
+                    health = 50;
+                    location = "all_saints";
+                    character.isDead = false;
+                    character.health = 50;
+                    character.location = "all_saints";
+                    await character.save();
+                    discharged = true;
+                }
+            }
+
             // Join the socket room for the character's location
-            socket.join(character.location);
+            socket.join(location);
 
             // Build player state from DB
             const playerState = {
                 userId: user.userId as string,
                 characterId: character.characterId,
                 name: character.name,
-                location: character.location,
+                location: location,
                 faction: character.faction ?? "none",
                 factionRank: character.factionRank ?? 0,
-                health: character.health ?? 100,
+                health: health,
                 hunger: character.hunger ?? 100,
                 thirst: character.thirst ?? 100,
                 energy: character.energy ?? 100,
-                isDead: character.isDead ?? false,
+                isDead: isDead,
                 wantedLevel: character.wantedLevel ?? 0,
                 radioFrequency: (character.radioFrequency ?? null) as number | null,
                 inCall: null,
@@ -91,15 +111,19 @@ export function registerHandlers(io: Server, socket: Socket) {
 
             // Send entry confirmation
             socket.emit("enteredCity", {
-                location: character.location,
+                location: playerState.location,
             });
 
             // ── Boot Sequence ──────────────────────────────────
             // Send a batch of useful info on connect
+            const welcomeMsg = discharged
+                ? `Welcome back, ${character.name}. You have finished recovering at All Saints General Hospital and have been discharged.`
+                : `Connected as ${character.name}. Location: ${playerState.location}. Type /look to see your surroundings, /help for commands.`;
+
             socket.emit("chat", {
                 channel: "system",
                 name: "SYSTEM",
-                message: `Connected as ${character.name}. Location: ${character.location}. Type /look to see your surroundings, /help for commands.`,
+                message: welcomeMsg,
             });
 
             // Send vitals snapshot
