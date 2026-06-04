@@ -50,9 +50,15 @@ const CharacterSchema = new Schema({
         default: "none"
     },
 
+    factionRank: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 5
+    },
+
     location: {
         type: String,
-        enum: ["all_saints", "downtown", "airport", "harbor"],
         default: "all_saints"
     },
 
@@ -61,6 +67,8 @@ const CharacterSchema = new Schema({
         enum: ["unemployed", "working", "cooldown"],
         default: "unemployed"
     },
+
+    // ── Economy ─────────────────────────────────────────
 
     cash: {
         type: Number,
@@ -74,7 +82,23 @@ const CharacterSchema = new Schema({
         min: 0
     },
 
+    // ── Vitals ──────────────────────────────────────────
+
     health: {
+        type: Number,
+        default: 100,
+        min: 0,
+        max: 100
+    },
+
+    hunger: {
+        type: Number,
+        default: 100,
+        min: 0,
+        max: 100
+    },
+
+    thirst: {
         type: Number,
         default: 100,
         min: 0,
@@ -88,16 +112,76 @@ const CharacterSchema = new Schema({
         max: 100
     },
 
+    // ── Combat / Death ──────────────────────────────────
+
+    isDead: {
+        type: Boolean,
+        default: false
+    },
+
+    deathCooldown: {
+        type: Date,
+        default: null
+    },
+
+    killCount: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+
+    deathCount: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+
+    wantedLevel: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 5
+    },
+
+    wantedExpiry: {
+        type: Date,
+        default: null
+    },
+
+    // ── Communication ───────────────────────────────────
+
+    phoneNumber: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
+
+    radioFrequency: {
+        type: Number,
+        default: null
+    },
+
+    // ── Experience ──────────────────────────────────────
+
     experience: {
         type: Number,
         default: 0,
         min: 0
     },
 
+    // ── Inventory ───────────────────────────────────────
+
     inventory: [{
-        itemId: String,
-        quantity: Number
+        itemId: { type: String, required: true },
+        quantity: { type: Number, required: true, min: 1 }
     }],
+
+    weapons: [{
+        itemId: { type: String, required: true },
+        ammo: { type: Number, default: 0, min: 0 }
+    }],
+
+    // ── Meta ────────────────────────────────────────────
 
     avatar: {
         type: String,
