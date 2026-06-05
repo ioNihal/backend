@@ -4,10 +4,14 @@ import jwt, { type JwtPayload } from "jsonwebtoken";
 import { registerHandlers } from "./handlers.js";
 import { players } from "./state.js";
 import { startGlobalVitalTick } from "./vitals.js";
+import { initJobsSystem } from "./jobs.js";
 
 export function initSockets(io: Server) {
     // Start global vitals tick
     startGlobalVitalTick(io);
+
+    // Initialize jobs timer subscription
+    initJobsSystem(io);
 
     // middleware for auth
     io.use((socket, next) => {
