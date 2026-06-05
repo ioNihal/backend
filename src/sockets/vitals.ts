@@ -125,6 +125,9 @@ export function startGlobalVitalTick(io: Server) {
                 // Fetch cash count from DB
                 const character = await Character.findOne({ characterId: player.characterId });
                 const cash = character ? (character.cash ?? 0) : 0;
+                const bank = character ? (character.bankBalance ?? 0) : 0;
+                const wantedLevel = character ? (character.wantedLevel ?? 0) : player.wantedLevel;
+                const radioFrequency = character ? (character.radioFrequency ?? null) : player.radioFrequency;
 
                 // Push vitalsUpdate to the socket
                 io.to(socketId).emit("vitalsUpdate", {
@@ -133,6 +136,9 @@ export function startGlobalVitalTick(io: Server) {
                     thirst: player.thirst,
                     energy: player.energy,
                     cash,
+                    bank,
+                    wantedLevel,
+                    radioFrequency,
                 });
             }
         } catch (err) {
@@ -186,6 +192,9 @@ export async function applyVitalEffect(
 
     const character = await Character.findOne({ characterId: player.characterId });
     const cash = character ? (character.cash ?? 0) : 0;
+    const bank = character ? (character.bankBalance ?? 0) : 0;
+    const wantedLevel = character ? (character.wantedLevel ?? 0) : player.wantedLevel;
+    const radioFrequency = character ? (character.radioFrequency ?? null) : player.radioFrequency;
 
     // Emit updated vitals
     io.to(socketId).emit("vitalsUpdate", {
@@ -194,5 +203,8 @@ export async function applyVitalEffect(
         thirst: player.thirst,
         energy: player.energy,
         cash,
+        bank,
+        wantedLevel,
+        radioFrequency,
     });
 }

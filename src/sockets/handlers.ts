@@ -14,6 +14,7 @@ import "./commands/phone.js";
 import "./commands/radio.js";
 import "./commands/inventory.js";
 import "./commands/combat.js";
+import "./commands/economy.js";
 
 
 export function registerHandlers(io: Server, socket: Socket) {
@@ -133,6 +134,9 @@ export function registerHandlers(io: Server, socket: Socket) {
                 thirst: playerState.thirst,
                 energy: playerState.energy,
                 cash: character.cash ?? 0,
+                bank: character.bankBalance ?? 0,
+                wantedLevel: playerState.wantedLevel,
+                radioFrequency: playerState.radioFrequency,
             });
 
             // Send inventory snapshot
