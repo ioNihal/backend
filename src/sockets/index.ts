@@ -5,8 +5,15 @@ import { registerHandlers } from "./handlers.js";
 import { players } from "./state.js";
 import { startGlobalVitalTick } from "./vitals.js";
 import { initJobsSystem } from "./jobs.js";
+import { ONLINE_PLAYERS } from "../lib/redisKeys.js";
+import redis from "../lib/redis.js";
 
 export function initSockets(io: Server) {
+    // Clear any stale online players on startup/restart
+    redis.del(ONLINE_PLAYERS).catch(err => {
+        console.error("[Sockets] Failed to clear ONLINE_PLAYERS on startup:", err);
+    });
+
     // Start global vitals tick
     startGlobalVitalTick(io);
 
