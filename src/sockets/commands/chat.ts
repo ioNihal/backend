@@ -159,15 +159,24 @@ registerCommand("s", (ctx: CommandContext, args: string[]) => {
         message,
     });
 
-    // Emit to adjacent rooms (with distance indicator)
+    // Emit to adjacent rooms only if they are physically close (distance <= 180)
     for (const connId of node.connections) {
-        ctx.io.to(connId).emit("chat", {
-            channel: "shout",
-            name: ctx.player.name,
-            message: `(shouting from ${node.name}) ${message}`,
-        });
+        const targetNode = mapNodes[connId];
+        if (!targetNode) continue;
+
+        const dx = targetNode.x - node.x;
+        const dy = targetNode.y - node.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist <= 180) {
+            ctx.io.to(connId).emit("chat", {
+                channel: "shout",
+                name: ctx.player.name,
+                message: `(shouting from ${node.name}) ${message}`,
+            });
+        }
     }
-}, "Shout — reaches current and adjacent locations", "/s [message]");
+}, "Shout — reaches current and close adjacent locations", "/s [message]");
 
 // ═══════════════════════════════════════════════════════════════
 //  /me [action] — Third-person roleplay action
