@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser";
 import authRoutes from '@/routes/auth.js';
 import userRoutes from '@/routes/user.js';
 import characterRoutes from '@/routes/character.js';
+import factionRoutes from '@/routes/faction.js';
 import { Server } from "socket.io";
 import { initSockets } from "@/sockets/index.js";
 
@@ -48,8 +49,9 @@ import { ONLINE_PLAYERS } from '@/lib/redisKeys.js';
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/me', userRoutes)
-app.use('/api/characters', characterRoutes)
+app.use('/api/me', userRoutes);
+app.use('/api/characters', characterRoutes);
+app.use('/api/factions', factionRoutes);
 
 app.get('/api/map', (_, res) => {
     res.json(Object.values(mapNodes));
